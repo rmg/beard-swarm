@@ -1,0 +1,12 @@
+{
+  "author": "Ryan Graham <r.m.graham@gmail.com>",
+  "name": "bc3",
+  "description": "Build Cluster, generation 3",
+  "version": "0.0.0",
+  "dependencies": {},
+  "devDependencies": {},
+  "optionalDependencies": {},
+  "engines": {
+    "node": "*"
+  }
+}
