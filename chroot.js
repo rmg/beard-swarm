@@ -1,6 +1,4 @@
 var spawn = require('child_process').spawn;
-    // TODO s/bash/chroot/
-// var chroot = spawn('bash', ['-i']);
 
 var log = function(tag, buf) {
 	return function (data) {
@@ -11,6 +9,7 @@ var log = function(tag, buf) {
 
 exports.run = function (cmd, cb) {
 	var outbuf = [], errbuf = [];
+	// TODO s/bash/chroot/
 	var sub = spawn('bash', ['-i']);
 	sub.stdout.on('data', log('stdout', outbuf));
 	sub.stderr.on('data', log('stderr', errbuf));
