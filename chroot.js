@@ -14,7 +14,7 @@ exports.run = function (cmd, cb) {
 	sub.stdout.on('data', log('stdout', outbuf));
 	sub.stderr.on('data', log('stderr', errbuf));
 	sub.on('exit', function (exit) {
-			cb(exit, outbuf.join(), errbuf.join());
-			});
+        cb(exit, outbuf.join(), errbuf.join());
+    });
 	sub.stdin.end(cmd + "\n");
 };
