@@ -8,7 +8,13 @@ var http = require('http');
 
 function WWWCommandSource() {
     events.EventEmitter.call(this);
-    this.server = http.createServer(this.requestHandler);
+    var me = this;
+    this.server = http.createServer(function (request, response) {
+        me.requestHandler(request, response);
+    });
+    this.on('newListener', function (ev, fn) {
+        console.log("New listener for: " + ev);
+    });
 }
 
 util.inherits(WWWCommandSource, events.EventEmitter);
@@ -28,6 +34,8 @@ function commandResponseWrapper(command, httpResponse) {
 
 WWWCommandSource.prototype.requestHandler = function (request, response) {
     //console.log(request);
+    var cmdSource = this;
+    console.log(util.format("%s - %s", request.method, request.url));
     if (request.method == 'GET') {
         readFile('assets/cmd.html', function(err, data) {
             if (err) {
@@ -42,9 +50,9 @@ WWWCommandSource.prototype.requestHandler = function (request, response) {
     } else {
         request.on('data', function(data) {
             var params = qs.parse(data.toString());
-            //			console.log(data);
-            console.log(params);
-            this.emit("command",
+            console.log(" -> ", params);
+            //console.dir(cmdSource);
+            cmdSource.emit("command",
                         params.command,
                         commandResponseWrapper(params.command, response));
         });
