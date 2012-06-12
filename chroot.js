@@ -9,8 +9,14 @@ var log = function(tag, buf) {
 
 exports.run = function (cmd, cb) {
 	var outbuf = [], errbuf = [];
+    var opts = {
+        cwd: undefined,
+        env: process.env
+    };
 	// TODO s/bash/chroot/
-	var sub = spawn('bash', ['-i']);
+    var shell = 'bash';
+    var args = ['-i'];
+	var sub = spawn(shell, args); //, opts);
 	sub.stdout.on('data', log('stdout', outbuf));
 	sub.stderr.on('data', log('stderr', errbuf));
 	sub.on('exit', function (exit) {
