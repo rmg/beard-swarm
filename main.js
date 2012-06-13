@@ -13,11 +13,11 @@ var fake_emitter = new events.EventEmitter();
 function fake_task() {
     var nums = [1,1];
     setInterval(function () {
-        var next = nums[0] + nums[1];
-        fake_emitter.emit('data', nums[0]);
-        nums[0] = nums[1];
-        nums[1] = next;
-    }, 500);
+            var next = nums[0] + nums[1];
+            fake_emitter.emit('data', nums[0]);
+            nums[0] = nums[1];
+            nums[1] = next;
+            }, 500);
 }
 
 function fake_logger(data) {
@@ -31,7 +31,7 @@ function turn_off() {
 }
 
 setTimeout(turn_on, 50);
-setTimeout(turn_off, 1500)
+setTimeout(turn_off, 1500);
 setTimeout(turn_on, 2500);
 fake_task();
 

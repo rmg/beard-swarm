@@ -25,7 +25,10 @@ WWWCommandSource.prototype.listen = function (port) {
 
 function commandResponseWrapper(command, httpResponse) {
     return function (ecode, out, err) {
-        var body = "Ran '" + command + "', exit code: <pre>" + ecode + "</pre>\nSTDOUT:\n<pre>" + out + "</pre>\nSTDERR:\n<pre>" + err + "</pre>";
+        var body = util.format("Ran '%s', exit code: <pre>%s</pre>\n" +
+                                "STDOUT:\n<pre>%s</pre>\n" +
+                                "STDERR:\n<pre>%s</pre>",
+                                command, ecode, out, err);
         httpResponse.setHeader('Content-Type', 'text/html');
         httpResponse.statusCode = ecode ? 400 : 200;
         httpResponse.end(body);
