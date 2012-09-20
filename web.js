@@ -3,7 +3,6 @@ var util = require('util');
 var events = require('events');
 var qs = require('querystring');
 var readFile = require('fs').readFile;
-var http = require('http');
 
 
 function WWWCommandSource() {
