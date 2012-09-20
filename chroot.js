@@ -1,26 +1,31 @@
 var spawn = require('child_process').spawn;
 
-var log = function(tag, buf) {
-    return function (data) {
-        console.log("<" + tag + ">" + data + "</" + tag + ">\n");
-        buf.push(data);
-    };
-};
+function logger(tag, buf) {
+  function emit_log(data) {
+    console.log("<" + tag + ">" + data + "</" + tag + ">\n");
+    buf.push(data);
+  }
+  return emit_log;
+}
 
-exports.run = function (cmd, cb) {
-    var outbuf = [], errbuf = [];
-    var opts = {
-        "cwd": undefined,
-        "env": process.env
-    };
-    // TODO s/bash/chroot/
-    var shell = 'bash';
-    var args = ['-i'];
-    var sub = spawn(shell, args); //, opts);
-    sub.stdout.on('data', log('stdout', outbuf));
-    sub.stderr.on('data', log('stderr', errbuf));
-    sub.on('exit', function (exit) {
-            cb(exit, outbuf.join(), errbuf.join());
-            });
-    sub.stdin.end(cmd + "\n");
-};
+function run(cmd, cb) {
+  var outbuf = [], errbuf = [];
+  var opts = {
+      "cwd": undefined,
+      "env": process.env
+  };
+  // TODO s/bash/chroot/
+  var shell = 'bash';
+  var args = ['-i'];
+  var sub = spawn(shell, args); //, opts);
+
+  function cleanup(exit) {
+    cb(exit, outbuf.join(), errbuf.join());
+  }
+  sub.stdout.on('data', logger('stdout', outbuf));
+  sub.stderr.on('data', logger('stderr', errbuf));
+  sub.on('exit', cleanup);
+  sub.stdin.end(cmd + "\n");
+}
+
+exports.run = run;
