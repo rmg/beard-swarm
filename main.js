@@ -1,6 +1,7 @@
 var chroot = require("./chroot.js");
 var web = require("./web.js");
 var events = require("events");
+var util = require('util')
 
 var server = new web.WWWCommandSource();
 
@@ -35,8 +36,10 @@ function turn_off() {
 setTimeout(turn_on, 50);
 setTimeout(turn_off, 1500);
 setTimeout(turn_on, 2500);
-fake_task();
+//fake_task();
 
 server.on("command", runCommand);
 
 server.listen(8000);
+
+//runCommand("gcc --version", util.inspect)

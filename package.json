@@ -3,7 +3,9 @@
   "name": "bc3",
   "description": "Build Cluster, generation 3",
   "version": "0.0.0",
-  "dependencies": {},
+  "dependencies": {
+    "tmp": "0.0.14"
+    },
   "devDependencies": {},
   "optionalDependencies": {},
   "engines": {
