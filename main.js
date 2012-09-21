@@ -1,4 +1,4 @@
-var chroot = require("./chroot.js")
+var env = require("./environment.js")
   , web = require("./web.js")
   , events = require("events")
   , util = require('util')
@@ -6,7 +6,7 @@ var chroot = require("./chroot.js")
 
 function runCommand(cmd, result_handler) {
   console.log("Command from interwebs: " + cmd)
-  chroot.run(cmd, result_handler)
+  env.run(cmd, result_handler)
 }
 
 var fake_emitter = new events.EventEmitter()
