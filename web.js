@@ -37,6 +37,19 @@ function commandResponseWrapper(command, httpResponse) {
   }
 }
 
+WWWCommandSource.prototype.makeResponseHandler = function(request, response) {
+  var cmdSrc = this
+  function handler(data) {
+    var params = qs.parse(data.toString())
+    console.log(" -> ", params)
+    //console.dir(cmdSource)
+    cmdSrc.emit("command",
+              params.command,
+              commandResponseWrapper(params.command, response))
+  }
+  return handler
+}
+
 WWWCommandSource.prototype.requestHandler = function (request, response) {
   //console.log(request)
   var cmdSource = this
@@ -49,18 +62,11 @@ WWWCommandSource.prototype.requestHandler = function (request, response) {
       } else {
         response.end(data)
       }
-    });
+    })
     response.setHeader('Content-Type', 'text/html')
     response.statusCode =  200
   } else {
-    request.on('data', function(data) {
-      var params = qs.parse(data.toString())
-      console.log(" -> ", params)
-      //console.dir(cmdSource)
-      cmdSource.emit("command",
-                     params.command,
-                     commandResponseWrapper(params.command, response))
-    })
+    request.on('data', this.makeResponseHandler(request, response))
   }
 }
 

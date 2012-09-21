@@ -33,7 +33,7 @@ function make_env(env, cb) {
 function logger(tag, buf) {
   function emit_log(data) {
     log("<%s>%s</%s>", tag, data, tag)
-    if (buf) buf.write(data)
+    if (buf) buf.push(data)
   }
   return emit_log
 }
@@ -61,6 +61,9 @@ function umount(root, cb) {
 }
 
 function chroot(root) {
+  function setup_exit(exit) {
+    log("chroot setup shell exited: %s", exit)
+  }
   log("chroot(%s)", root)
   var opts = { cwd:   root
              , env:   process.env
@@ -71,13 +74,16 @@ function chroot(root) {
              , "mount -t proc none ./proc || exit"
              , "mount --rbind /sys ./sys || exit"
              , "mount --rbind /dev ./dev || exit"
-             , "chroot ./"
              ]
+  sub.stdout.on('data', logger('chroot(setup)[out]'))
+  sub.stderr.on('data', logger('chroot(setup)[err]'))
   for (var i = 0; i < cmds.length; i++) {
     log("sending: %s", cmds[i])
     sub.stdin.write(cmds[i] + "\n")
   }
-  return sub
+  sub.stdin.end()
+  sub.on('exit', setup_exit)
+  return spawn('chroot', ['./'], opts)
 }
 
 function chroot_env(env, cb) {
@@ -90,15 +96,15 @@ function chroot_env(env, cb) {
 
 function run(cmd, cb) {
   var root   = './chroot'
-    , outbuf = new Buffer()
-    , errbuf = new BUffer()
+    , outbuf = []
+    , errbuf = []
 
   function make_cleaner(path) {
     function cleanup(exit) {
       util.inspect("cleanup", arguments)
       umount(path, function(er, so, se) {
         log("done unmounting..")
-        cb(exit, outbuf.join(), errbuf.join())
+        cb(exit, outbuf.join("\n"), errbuf.join("\n"))
       })
     }
     return cleanup
@@ -110,6 +116,7 @@ function run(cmd, cb) {
       sub.stdout.on('data', logger('stdout', outbuf))
       sub.stderr.on('data', logger('stderr', errbuf))
       sub.on('exit', make_cleaner(path))
+      log("Running: %s", cmd)
       sub.stdin.end(cmd + "\n")
     }
   }
