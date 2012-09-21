@@ -3,7 +3,8 @@ var util = require('util');
 var events = require('events');
 var qs = require('querystring');
 var readFile = require('fs').readFile;
-
+var Convert = require('ansi-to-html');
+var convert = new Convert();
 
 function WWWCommandSource() {
   events.EventEmitter.call(this);
@@ -27,7 +28,9 @@ function commandResponseWrapper(command, httpResponse) {
     var body = util.format("Ran '%s', exit code: <pre>%s</pre>\n" +
                            "STDOUT:\n<pre>%s</pre>\n" +
                            "STDERR:\n<pre>%s</pre>",
-                           command, ecode, out, err);
+                           command, ecode,
+                           convert.toHtml(out),
+                           convert.toHtml(err));
     httpResponse.setHeader('Content-Type', 'text/html');
     httpResponse.statusCode = ecode ? 400 : 200;
     httpResponse.end(body);

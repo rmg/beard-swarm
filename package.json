@@ -4,7 +4,8 @@
   "description": "Build Cluster, generation 3",
   "version": "0.0.0",
   "dependencies": {
-    "tmp": "0.0.14"
+    "tmp": "*",
+    "ansi-to-html": "*"
     },
   "devDependencies": {},
   "optionalDependencies": {},

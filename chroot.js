@@ -32,10 +32,10 @@ function make_env(env, cb) {
 
 function logger(tag, buf) {
   function emit_log(data) {
-    log("<%s>%s</%s>", tag, data, tag);
-    if (buf) buf.push(data);
+    log("<%s>%s</%s>", tag, data, tag)
+    if (buf) buf.write(data)
   }
-  return emit_log;
+  return emit_log
 }
 
 function umount(root, cb) {
@@ -90,15 +90,15 @@ function chroot_env(env, cb) {
 
 function run(cmd, cb) {
   var root   = './chroot'
-    , outbuf = []
-    , errbuf = []
+    , outbuf = new Buffer()
+    , errbuf = new BUffer()
 
   function make_cleaner(path) {
     function cleanup(exit) {
       util.inspect("cleanup", arguments)
       umount(path, function(er, so, se) {
         log("done unmounting..")
-        cb(exit, outbuf.join(), errbuf.join());
+        cb(exit, outbuf.join(), errbuf.join())
       })
     }
     return cleanup
@@ -107,10 +107,10 @@ function run(cmd, cb) {
   function chroot_created(err, sub, path) {
     if (err) util.inspect(err, sub, path)
     else {
-      sub.stdout.on('data', logger('stdout', outbuf));
-      sub.stderr.on('data', logger('stderr', errbuf));
-      sub.on('exit', make_cleaner(path));
-      sub.stdin.end(cmd + "\n");
+      sub.stdout.on('data', logger('stdout', outbuf))
+      sub.stderr.on('data', logger('stderr', errbuf))
+      sub.on('exit', make_cleaner(path))
+      sub.stdin.end(cmd + "\n")
     }
   }
 
