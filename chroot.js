@@ -3,6 +3,23 @@ var child_process = require('child_process')
   , exec          = child_process.exec
   , tmp           = require('tmp')
   , util          = require('util')
+  , env           = require('./environment.js')
+
+function Chroot(root, template) {
+  if (template && !root) {
+    // create a new root from template
+  }
+  // mount required mounts
+  // spawn process inside chroot
+}
+
+util.inherits(Chroot, events.EventEmitter)
+
+
+function Environment(name) {
+
+}
+
 
 function log() {
   var args = Array.prototype.slice.apply(arguments)
