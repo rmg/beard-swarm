@@ -5,7 +5,10 @@
   "version": "0.0.0",
   "dependencies": {
     "tmp": "*",
-    "ansi-to-html": "*"
+    "ansi-to-html": "*",
+    "posix": "*",
+    "better-inspect": "*",
+    "lodash": "*"
     },
   "devDependencies": {},
   "optionalDependencies": {},
