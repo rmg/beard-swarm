@@ -159,7 +159,16 @@ Chroot.prototype.dispatch_data = function(args) {
 }
 
 Chroot.prototype.dispatch_exec = function(args) {
-  if (this.execs[args.exec]) this.execs[args.exec](args.exit, args.stdout, args.stderr)
+  function cb_with_args(cb) {
+    return function() {
+      cb(args.exit, args.stdout, args.stderr)
+    }
+  }
+  if (this.execs[args.exec]) {
+    process.nextTick(cb_with_args(this.execs[args.exec]))
+    this.emit("exec", args)
+    delete this.execs[args.exec]
+  }
   else log("no exec %s", args)
 }
 

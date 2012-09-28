@@ -40,6 +40,7 @@ Environment.prototype.then_emit = function(e) {
 
 Environment.prototype.chrooted = function(path) {
   // should verify path
+  log("chrooted: %s", path)
   this.emit('ready')
 }
 
@@ -49,36 +50,58 @@ Environment.prototype.make_temp = function() {
           this.then_emit('temp-created'))
 }
 
-Environment.prototype.exec_list = function(cmds, opts, next) {
+Environment.prototype.base_exec_list = function(host, cmds, list_opts, next) {
   var todo = 0
-
-  opts = opts || { "cwd":   this.path
-                 , "env":   process.env
-                 }
+    , acc_out = ""
+    , acc_err = ""
 
   function execNext(err, out, stderr) {
+    var opts = _.clone(list_opts)
+      , cmd = cmds[todo]
+    if (out) acc_out += out
+    if (stderr) acc_err += stderr
+    log("execNext(%s) -> %s: %s", err, cmd, opts.cwd)
     if (err) {
-      this.emit("error", 'OMG THE WORLD IS ON FIRE!!', opts, arguments)
-      log("execComplete() < %s", arguments)
+      if (!err.message) {
+        err.message = stderr
+      }
+      log("execComplete():\n%s", arguments)
+      log("out: %s\nerr: %s", acc_out, acc_err)
+      if (typeof next === 'function') next(err, acc_out, acc_err)
+      else this.emit("error", 'OMG THE WORLD IS ON FIRE!!', opts, arguments)
     } else if (todo < cmds.length) {
-      child_process.exec(cmds[todo], opts, execNext.bind(this))
+      if (util.isArray(cmd)) {
+        opts = _.extend(opts, cmd[1] || {})
+        cmd = cmd[0]
+      }
+      host.exec(cmd, opts, execNext.bind(this))
       todo += 1
     } else {
-      if (typeof next === 'string') this.emit(next)
-      else process.nextTick(next)
+      if (typeof next === 'string') this.emit(next, acc_out, acc_err)
+      else process.nextTick( function() { next(err, acc_out, acc_err) } )
     }
   }
+  log("base_exec_list(): %s", list_opts.cwd)
   execNext.call(this)
 }
 
-Environment.prototype.mount = function(err) {
+Environment.prototype.host_exec_list = function(cmds, opts, next) {
+  opts = opts || { "cwd":   this.path
+                 , "env":   process.env
+                 }
+  if (opts && opts.cwd) log("host_exec_list(): %s", opts.cwd)
+  this.base_exec_list(child_process, cmds, opts, next)
+}
+
+Environment.prototype.mount = function(err, stdout, stderr) {
   // setup mounts
-  var cmds = [ "cp -L /etc/resolv.conf ./etc/"
+  var cmds = [ "pwd", "ls", "cp -L /etc/resolv.conf ./etc/"
              , "mount -t proc none ./proc"
              , "mount --rbind /sys ./sys"
              , "mount --rbind /dev ./dev"
              ]
-  this.exec_list(cmds, null, 'mounted')
+  if (err) this.emit('error', stdout, stderr)
+  else this.host_exec_list(cmds, null, 'mounted')
 }
 
 Environment.prototype.umount = function(err) {
@@ -102,7 +125,7 @@ Environment.prototype.umount = function(err) {
       , cmd = util.format("mount | grep '%s'", tmpdir)
     child_process.exec(cmd, umount_result.bind(this))
   }
-  this.exec_list(cmds, null, check_umount.bind(this))
+  this.host_exec_list(cmds, null, check_umount.bind(this))
 }
 
 Environment.prototype.end = function() {
@@ -111,12 +134,13 @@ Environment.prototype.end = function() {
 }
 
 Environment.prototype.sync = function(err, path) {
-  this.path = path
   var cmd = util.format('rsync -a --inplace %s/ %s',
                         this.env,
-                        this.path)
+                        path)
+  this.path = path
+  log("sync(): %s", path)
   if (err) this.emit("error", arguments)
-  else child_process.exec(cmd, this.then_emit('synced'))
+  else child_process.exec(cmd, null, this.then_emit('synced'))
 }
 
 Environment.prototype.chroot = function() {
@@ -124,6 +148,7 @@ Environment.prototype.chroot = function() {
     , opts = { "cwd": this.path
              , "env": process.env
              }
+  log("chroot(): %s (%s)", this.path, opts.cwd)
   this.sub = new Chroot(args, opts)
   this.sub.once('chrooted', this.chrooted.bind(this))
   this.sub.chroot(this.path)
@@ -132,6 +157,7 @@ Environment.prototype.chroot = function() {
 Environment.prototype.cleanup = function() {
   // unmounted, now we clean up this mess
   var cmd = util.format('rm -rf %s', this.path)
+  log("cleanup(): %s", this.path)
   child_process.exec(cmd, this.then_emit('clean'))
 }
 
@@ -141,7 +167,12 @@ Environment.prototype.run = function(cmd, args, opts) {
 }
 
 Environment.prototype.exec = function(cmd, opts, cb) {
+  log("exec().path: %s, opts: %s", this.path, opts)
   this.sub.exec(cmd, opts, cb)
+}
+
+Environment.prototype.exec_list = function(cmds, opts, next) {
+  this.base_exec_list(this.sub, cmds, opts, next)
 }
 
 exports.Environment = Environment
