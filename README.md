@@ -1,11 +1,11 @@
-BC3 - Build Clsuter v3
+## BC3 - Build Clsuter v3
 
 A re-design and re-write of BC2 in JavaScript using NodeJS.
 
 Generally speaking, BC2 is a distributed task runner where a node connects to a job queue, performs a job, and uploads the results.
 
 
-TODO:
+### TODO:
 
 - Run a build
   - requires a description language/format
