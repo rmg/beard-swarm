@@ -1,4 +1,4 @@
-## BC3 - Build Clsuter v3
+## BC3 - Build Cluster v3
 
 A re-design and re-write of BC2 in JavaScript using NodeJS.
 
