@@ -1,4 +1,4 @@
-## BC3 - Build Cluster v3
+## Beard Swarm - Yet another distributed task runner
 
 A re-design and re-write of BC2 in JavaScript using NodeJS.
 

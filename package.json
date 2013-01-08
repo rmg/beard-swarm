@@ -1,7 +1,7 @@
 {
   "author": "Ryan Graham <r.m.graham@gmail.com>",
-  "name": "bc3",
-  "description": "Build Cluster, generation 3",
+  "name": "beard-swarm",
+  "description": "Yet another distributed task runner.",
   "version": "0.0.0",
   "dependencies": {
     "tmp": "*",
