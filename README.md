@@ -1,9 +1,8 @@
 ## Beard Swarm - Yet another distributed task runner
 
-A re-design and re-write of BC2 in JavaScript using NodeJS.
+Initial goal is to run build jobs for large code bases with mulitple configurations.
 
-Generally speaking, BC2 is a distributed task runner where a node connects to a job queue, performs a job, and uploads the results.
-
+Suitable as the basis for a continuous integration cluster, build cluster, or large data file scanner.
 
 ### TODO:
 
