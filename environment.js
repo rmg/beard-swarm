@@ -8,7 +8,9 @@ var child_process = require('child_process')
   , Chroot        = require('./chroot.js').Chroot
   , inspect       = require('better-inspect')
   , log           = require('./log.js').log
+  , fs            = require('fs')
   , _             = require('lodash')
+  , f             = util.format
 
 function Environment(name) {
   this.env = name
@@ -93,10 +95,14 @@ Environment.prototype.host_exec_list = function(cmds, opts, next) {
 
 Environment.prototype.mount = function(err, stdout, stderr) {
   // setup mounts
-  var cmds = [ "pwd", "ls", "cp -L /etc/resolv.conf ./etc/"
-             , "mount -t proc none ./proc"
-             , "mount --rbind /sys ./sys"
-             , "mount --rbind /dev ./dev"
+  var cmds = [ "pwd", "ls"
+             , f("cp -L /etc/resolv.conf %s/ro/etc/", this.path)
+             , f("mount -o remount,ro %s/ro", this.path)
+             , f("mount -t proc none %s/ro/proc", this.path)
+             , f("mount -t sysfs sysfs %s/ro/sys", this.path)
+             , f("mount --rbind /dev %s/ro/dev", this.path)
+             , f("mount -t tmpfs tmpfs %s/ro/tmp", this.path)
+             , f("mount -t tmpfs tmpfs %s/ro/root", this.path)
              ]
   if (err) this.emit('error', stdout, stderr)
   else this.host_exec_list(cmds, null, 'mounted')
@@ -106,9 +112,12 @@ Environment.prototype.umount = function(err) {
   var cmds = [ "pwd" //debug
              , "ls -l" //debug
              , "mount" //debug
-             , "umount -l ./proc"
-             , "umount -l ./sys"
-             , "umount -l ./dev"
+             , "umount -l ./ro/proc"
+             , "umount -l ./ro/sys"
+             , "umount -l ./ro/dev"
+             , "umount -l ./ro/tmp"
+             , "umount -l ./ro/root"
+             , "umount -l ./ro"
              ]
   function umount_result(unmounted, stdout, stderr) {
     if (unmounted) {
@@ -134,13 +143,21 @@ Environment.prototype.end = function() {
 // TODO: Strategy Pattern - make setup pluggable so we can
 //       use mount --bind, overlayfs, etc.
 Environment.prototype.sync = function(err, path) {
-  var cmd = util.format('rsync -a --inplace %s/ %s',
+  //var cmd = util.format('rsync -a --inplace %s/ %s',
+  //                      this.env,
+  //                      path)
+  var cmd = util.format('mount --bind %s %s/ro',
                         this.env,
                         path)
   this.path = path
   log("sync(): %s", path)
-  if (err) this.emit("error", arguments)
-  else child_process.exec(cmd, null, this.then_emit('synced'))
+  if (err) {
+    this.emit("error", arguments)
+  } else {
+    fs.mkdirSync(util.format("%s/ro", path))
+    fs.mkdirSync(util.format("%s/rw", path))
+    child_process.exec(cmd, null, this.then_emit('synced'))
+  }
 }
 
 Environment.prototype.chroot = function() {
@@ -151,7 +168,7 @@ Environment.prototype.chroot = function() {
   log("chroot(): %s (%s)", this.path, opts.cwd)
   this.sub = new Chroot(args, opts)
   this.sub.once('chrooted', this.chrooted.bind(this))
-  this.sub.chroot(this.path)
+  this.sub.chroot(this.path + "/ro", '/root')
 }
 
 Environment.prototype.cleanup = function() {
@@ -172,6 +189,7 @@ Environment.prototype.exec = function(cmd, opts, cb) {
 }
 
 Environment.prototype.exec_list = function(cmds, opts, next) {
+  log("exec_list(%s, %s, %s)", cmds, opts, next)
   this.base_exec_list(this.sub, cmds, opts, next)
 }
 
@@ -206,7 +224,10 @@ function sync_env(src, dst, cb) {
     else cb(err, dst)
   }
   log("rsync %s/ %s", src, dst)
-  exec(util.format('rsync -a --inplace %s/ %s', src, dst), sync_done)
+  fs.mkdirSync(util.format("%s/ro", dst))
+  fs.mkdirSync(util.format("%s/rw", dst))
+  //exec(util.format('rsync -a --inplace %s/ %s', src, dst), sync_done)
+  exec(util.format('mount --bind %s %s/ro', src, dst), sync_done)
 }
 
 function make_env(env, cb) {
@@ -233,9 +254,13 @@ function umount(root, cb) {
   var cmds = [ "pwd"
              , "ls -l"
              , "mount"
-             , "umount -l ./proc"
-             , "umount -l ./sys"
-             , "umount -l ./dev"
+             , "umount -l ./ro/proc"
+             , "umount -l ./ro/sys"
+             , "umount -l ./ro/dev"
+             , "umount -l ./ro/etc"
+             , "umount -l ./ro/tmp"
+             , "umount -l ./ro/root"
+             , "umount -l ./ro"
              ]
   sub.on('exit', cb)
   sub.stdout.on('data', logger('umount[stdout]'))
@@ -256,10 +281,13 @@ function chroot(root) {
              , stdio: 'pipe'
              }
   var sub = spawn('sh', ['-i'], opts)
-  var cmds = [ "cp -L /etc/resolv.conf ./etc/ || exit"
-             , "mount -t proc none ./proc || exit"
-             , "mount --rbind /sys ./sys || exit"
-             , "mount --rbind /dev ./dev || exit"
+  var cmds = [ "cp -L /etc/resolv.conf ./ro/etc/ || exit"
+             , "mount -o remount,ro ./ro || exit"
+             , "mount --bind ./rw ./ro/root || exit"
+             , "mount -t proc none ./ro/proc || exit"
+             , "mount -t sysfs sysfs /sys ./ro/sys || exit"
+             , "mount -t tmpfs tmpfs /tmp ./ro/tmp || exit"
+             , "mount --rbind /dev ./ro/dev || exit"
              ]
   sub.stdout.on('data', logger('chroot(setup)[out]'))
   sub.stderr.on('data', logger('chroot(setup)[err]'))

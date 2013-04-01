@@ -64,12 +64,22 @@ function do_run(args) {
   monitorRun(cmd, sub)
 }
 
+function do_chroot(args) {
+  var chroot_dir = args[0]
+    , chdir      = args[1] || false
+  posix.chroot(chroot_dir)
+  console.log(chroot_dir, chdir)
+  if (chdir) {
+    process.chdir(chdir)
+  }
+}
+
 function dispatch(cmd, args) {
   switch(cmd) {
-    case 'chroot': posix.chroot(args);      break
-    case 'exec':   do_exec(args);           break
-    case 'run':    do_run(args);            break
-    case 'quit':   process.exit();          break
+    case 'chroot': do_chroot(args);  break
+    case 'exec':   do_exec(args);    break
+    case 'run':    do_run(args);     break
+    case 'quit':   process.exit();   break
     default:       log("unkown dispatch: %s, %s", cmd, args)
   }
 }
@@ -144,8 +154,8 @@ Chroot.prototype.exec = function(cmd, opts, cb) {
   this.child.send(['exec', [cmd, opts]])
 }
 
-Chroot.prototype.chroot = function(path) {
-  this.child.send(['chroot', path])
+Chroot.prototype.chroot = function(path, chdir) {
+  this.child.send(['chroot', [path, chdir]])
   this.emit('chrooted', path)
 }
 
