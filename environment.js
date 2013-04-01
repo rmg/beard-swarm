@@ -1,12 +1,10 @@
 var child_process = require('child_process')
-  , spawn         = child_process.spawn
   , exec          = child_process.exec
   , tmp           = require('tmp')
   , util          = require('util')
   , path          = require('path')
   , events        = require('events')
   , Chroot        = require('./chroot.js').Chroot
-  , inspect       = require('better-inspect')
   , log           = require('./log.js').log
   , fs            = require('fs')
   , _             = require('lodash')
@@ -207,133 +205,4 @@ exports.run = function chroot_run(cmd, cb) {
   env.on('ready', run_cmd)
   env.on('exit', console.log)
   env.on('error', console.log)
-}
-
-
-
-
-
-
-function mkstemp(cb) {
-  tmp.dir({ template: '/tmp/tmp-XXXXXX' }, cb)
-}
-
-function sync_env(src, dst, cb) {
-  function sync_done(err, stdout, stderr) {
-    if (err) cb(err, stdout, stderr)
-    else cb(err, dst)
-  }
-  log("rsync %s/ %s", src, dst)
-  fs.mkdirSync(util.format("%s/ro", dst))
-  fs.mkdirSync(util.format("%s/rw", dst))
-  //exec(util.format('rsync -a --inplace %s/ %s', src, dst), sync_done)
-  exec(util.format('mount --bind %s %s/ro', src, dst), sync_done)
-}
-
-function make_env(env, cb) {
-  mkstemp(function(err, root) {
-    if (err) cb(err)
-    else sync_env(env, root, cb)
-  })
-}
-
-function logger(tag, buf) {
-  function emit_log(data) {
-    log("<%s>%s</%s>", tag, data, tag)
-    if (buf) buf.push(data)
-  }
-  return emit_log
-}
-
-function umount(root, cb) {
-  var opts = { "cwd":   root
-             , "env":   process.env
-             , "stdio": "pipe"
-             }
-  var sub = spawn('sh', ['-i'], opts)
-  var cmds = [ "pwd"
-             , "ls -l"
-             , "mount"
-             , "umount -l ./ro/proc"
-             , "umount -l ./ro/sys"
-             , "umount -l ./ro/dev"
-             , "umount -l ./ro/etc"
-             , "umount -l ./ro/tmp"
-             , "umount -l ./ro/root"
-             , "umount -l ./ro"
-             ]
-  sub.on('exit', cb)
-  sub.stdout.on('data', logger('umount[stdout]'))
-  sub.stderr.on('data', logger('umount[stderr]'))
-  for (var i = 0; i < cmds.length; i++) {
-    sub.stdin.write(util.format("%s\n", cmds[i]))
-  }
-  sub.stdin.end()
-}
-
-function chroot(root) {
-  function setup_exit(exit) {
-    log("chroot setup shell exited: %s", exit)
-  }
-  log("chroot(%s)", root)
-  var opts = { cwd:   root
-             , env:   process.env
-             , stdio: 'pipe'
-             }
-  var sub = spawn('sh', ['-i'], opts)
-  var cmds = [ "cp -L /etc/resolv.conf ./ro/etc/ || exit"
-             , "mount -o remount,ro ./ro || exit"
-             , "mount --bind ./rw ./ro/root || exit"
-             , "mount -t proc none ./ro/proc || exit"
-             , "mount -t sysfs sysfs /sys ./ro/sys || exit"
-             , "mount -t tmpfs tmpfs /tmp ./ro/tmp || exit"
-             , "mount --rbind /dev ./ro/dev || exit"
-             ]
-  sub.stdout.on('data', logger('chroot(setup)[out]'))
-  sub.stderr.on('data', logger('chroot(setup)[err]'))
-  for (var i = 0; i < cmds.length; i++) {
-    log("sending: %s", cmds[i])
-    sub.stdin.write(cmds[i] + "\n")
-  }
-  sub.stdin.end()
-  sub.on('exit', setup_exit)
-  return spawn('chroot', ['./'], opts)
-}
-
-function chroot_env(env, cb) {
-  function env_created(err, root) {
-    if (err) cb(err, root)
-    else cb(err, chroot(root), root)
-  }
-  make_env(env, env_created)
-}
-
-function run(cmd, cb) {
-  var root   = './chroot'
-    , outbuf = []
-    , errbuf = []
-
-  function make_cleaner(path) {
-    function cleanup(exit) {
-      log("cleanup(%s)", arguments)
-      umount(path, function(er, so, se) {
-        log("done unmounting..")
-        cb(exit, outbuf.join("\n"), errbuf.join("\n"))
-      })
-    }
-    return cleanup
-  }
-
-  function chroot_created(err, sub, path) {
-    if (err) log("chroot_created(%s)", arguments)
-    else {
-      sub.stdout.on('data', logger('stdout', outbuf))
-      sub.stderr.on('data', logger('stderr', errbuf))
-      sub.on('exit', make_cleaner(path))
-      log("Running: %s", cmd)
-      sub.stdin.end(cmd + "\n")
-    }
-  }
-
-  chroot_env(root, chroot_created)
 }

@@ -2,8 +2,6 @@ var posix = require('posix')
   , util = require('util')
   , child_process = require('child_process')
   , events = require('events')
-  , inspect       = require('better-inspect')
-  , _ = require('lodash')
   , log = require('./log.js').log
 
 
