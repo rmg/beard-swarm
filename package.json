@@ -12,10 +12,11 @@
     "kue": "*"
   },
   "scripts": {
-    "test": "mocha -R spec"
+    "test": "mocha -R spec -t 10000"
   },
   "devDependencies": {
-    "mocha": "~1.8.2"
+    "mocha": "~1.8.2",
+    "should": "~1.2.2"
   },
   "optionalDependencies": {},
   "engines": {
