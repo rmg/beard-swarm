@@ -5,7 +5,6 @@ var child_process = require('child_process')
   , util          = require('util')
   , path          = require('path')
   , events        = require('events')
-  , env           = require('./environment.js')
   , Chroot        = require('./chroot.js').Chroot
   , inspect       = require('better-inspect')
   , log           = require('./log.js').log
@@ -15,7 +14,7 @@ function Environment(name) {
   this.env = name
   this.path = null
 
-  // Setup the cicle of life
+  // Setup the circle of life..
   this.once('temp-created', this.sync.bind(this))
   this.once('synced', this.mount.bind(this))
   this.once('mounted', this.chroot.bind(this))
@@ -39,13 +38,12 @@ Environment.prototype.then_emit = function(e) {
 }
 
 Environment.prototype.chrooted = function(path) {
-  // should verify path
+  // TODO: verify path
   log("chrooted: %s", path)
   this.emit('ready')
 }
 
 Environment.prototype.make_temp = function() {
-  // rsync env to chroot home
   tmp.dir({template: '/tmp/tmp-XXXXXX'},
           this.then_emit('temp-created'))
 }
@@ -133,6 +131,8 @@ Environment.prototype.end = function() {
   this.sub.quit()
 }
 
+// TODO: Strategy Pattern - make setup pluggable so we can
+//       use mount --bind, overlayfs, etc.
 Environment.prototype.sync = function(err, path) {
   var cmd = util.format('rsync -a --inplace %s/ %s',
                         this.env,
@@ -309,5 +309,3 @@ function run(cmd, cb) {
 
   chroot_env(root, chroot_created)
 }
-
-//exports.run = run;

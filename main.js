@@ -47,6 +47,7 @@ server.on("command", runCommand)
 server.listen(8000)
 kue.app.listen(3000)
 
+// Create a test 'chroot' job on the jobs queue
 jobs.create('chroot', { title: 'compile nodejs'
                       , src: "https://github.com/antirez/redis/tarball/2.6.0-rc7"
                       , env: 'chroot'
@@ -98,6 +99,7 @@ function chroot_job(job, done) {
   chroot.on('error', loggit)
 }
 
+// Start a Kue runner for 'chroot' jobs on the queue
 jobs.process('chroot', chroot_job)
 
 
