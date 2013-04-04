@@ -1,5 +1,5 @@
-var env = require("./environment.js")
-  , web = require("./web.js")
+var env = require("./lib/environment.js")
+  , web = require("./lib/web.js")
   , events = require("events")
   , util = require('util')
   , server = new web.WWWCommandSource()
@@ -7,7 +7,7 @@ var env = require("./environment.js")
   , jobs = kue.createQueue()
   , https = require('https')
   , http = require('http')
-  , log           = require('./log.js').log
+  , log           = require('./lib/log.js').log
 
 function runCommand(cmd, result_handler) {
   console.log("Command from interwebs: " + cmd)
