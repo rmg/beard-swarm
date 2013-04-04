@@ -13,7 +13,7 @@ describe("Many cogs", function() {
                            , "ls"
                        ]
                 }
-                , env  = require("../environment.js")
+                , env  = require("../lib/environment.js")
                 , chroot = new env.Environment(task.env)
                 , opts = task.opt || {}
                 , commands = task.commands || []
