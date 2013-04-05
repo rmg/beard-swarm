@@ -1,5 +1,7 @@
 var should = require('should')
 
+var env = require("../lib/environment.js")
+
 describe("Many cogs", function() {
     describe("Environment", function() {
         it("runs a build given correct inputs", function(done) {
@@ -13,7 +15,6 @@ describe("Many cogs", function() {
                            , "ls"
                        ]
                 }
-                , env  = require("../lib/environment.js")
                 , chroot = new env.Environment(task.env)
                 , opts = task.opt || {}
                 , commands = task.commands || []
