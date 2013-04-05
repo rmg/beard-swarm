@@ -12,11 +12,16 @@
     "kue": "*"
   },
   "scripts": {
-    "test": "mocha -R spec -t 10000"
+    "test": "mocha -R spec -t 10000",
+    "coverage": "mocha --require blanket -R html-cov > coverage.html",
+    "blanket": {
+      "pattern": "beard-swarm/lib"
+    }
   },
   "devDependencies": {
     "mocha": "~1.8.2",
-    "should": "~1.2.2"
+    "should": "~1.2.2",
+    "blanket": "~1.1.1"
   },
   "optionalDependencies": {},
   "engines": {
