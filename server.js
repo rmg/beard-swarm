@@ -1,13 +1,13 @@
-var env = require("./lib/environment.js")
-  , web = require("./lib/web.js")
+var env    = require("./lib/environment.js")
+  , web    = require("./lib/web.js")
   , events = require("events")
-  , util = require('util')
+  , util   = require('util')
   , server = new web.WWWCommandSource()
-  , kue = require('kue')
-  , jobs = kue.createQueue()
-  , https = require('https')
-  , http = require('http')
-  , log           = require('./lib/log.js').log
+  , kue    = require('kue')
+  , jobs   = kue.createQueue()
+  , https  = require('https')
+  , http   = require('http')
+  , log    = require('./lib/log.js').log
 
 function runCommand(cmd, result_handler) {
   console.log("Command from interwebs: " + cmd)
